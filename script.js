@@ -1,133 +1,224 @@
-const hero = document.getElementById("hero");
-const story = document.getElementById("story");
-const startBtn = document.getElementById("startBtn");
+document.addEventListener("DOMContentLoaded", () => {
 
-const title = document.getElementById("title");
-const text = document.getElementById("text");
-const scene = document.getElementById("scene");
+    const hero = document.getElementById("hero");
+    const story = document.getElementById("story");
+    const startBtn = document.getElementById("startBtn");
+    const scene = document.getElementById("scene");
+    const title = document.getElementById("title");
+    const text = document.getElementById("text");
+    const music = document.getElementById("bgMusic");
+    const particlesContainer = document.getElementById("particles");
 
-/* HERO → STORY */
-startBtn.addEventListener("click", () => {
-    hero.style.display = "none";
-    story.classList.remove("hidden");
+    let current = 0;
+    let inFinal = false;
 
-    // Ensure initial state
-    scene.style.opacity = "0";
-    scene.style.transform = "translateY(20px)";
-
-    setTimeout(() => {
-        showPage(0);
-    }, 100);
-});
-
-/* STORY PAGES */
-const pages = [
-    { title: "", text: "Not a long time 💭\n\nBut somehow… it’s felt easy 💕" },
-    { title: "", text: "Monday happened 📅\n\nThen Tuesday happened 🎱" },
-    { title: "", text: "Somewhere between pool shots 🎱\nand random conversations 💬" },
-    { title: "", text: "When you laughed… 😌\n\nIt just felt easy being around you 💖" },
-    {
-        title: "So Vuyo 💌",
-        text: `Would you be my Valentine this year? 💘
-      <br><br>
-      <button class="choice yes-btn" onclick="yes()">Yes ❤️</button>
-      <button class="choice no-btn" onclick="noClicked()" id="noBtn">No 🙈</button>
-      <div id="errorMsg" style="margin-top:10px;"></div>`
-    }
-];
-
-let current = 0;
-let locked = false;
-
-/* SMOOTH FADE FUNCTION */
-function showPage(index) {
-
-    // Fade out first
-    scene.style.transition = "opacity 0.5s ease, transform 0.5s ease";
-    scene.style.opacity = "0";
-    scene.style.transform = "translateY(20px)";
-
-    setTimeout(() => {
-
-        title.innerHTML = pages[index].title;
-        text.innerHTML = pages[index].text.replace(/\n/g, "<br><br>");
-
-        // Fade back in
-        scene.style.opacity = "1";
-        scene.style.transform = "translateY(0)";
-
-    }, 500);
-}
-
-/* TAP TO NEXT */
-scene.addEventListener("click", () => {
-    if (locked) return;
-    if (current >= pages.length - 1) return;
-
-    locked = true;
-    current++;
-    showPage(current);
-
-    setTimeout(() => locked = false, 600);
-});
-
-/* YES */
-function yes() {
-    title.innerHTML = "That makes me smile 💗";
-    text.innerHTML = `
-    Looks like that rematch is officially a date 🎱✨
-    <br><br>
-    I'm really glad I asked.
-  `;
-    launchConfetti();
-}
-
-/* NO */
-function noClicked() {
-    const error = document.getElementById("errorMsg");
-    const noBtn = document.getElementById("noBtn");
-
-    const messages = [
-        "Nice try 😌",
-        "I think you misclicked 🙈",
-        "That option seems unavailable 😅"
+    const pages = [
+        "Not a long time 💭\n\nBut somehow… it’s felt easy 💕",
+        "Monday happened 📅\n\nThen Tuesday happened 🎱",
+        "Somewhere between pool shots 🎱\nand random conversations 💬",
+        "When you laughed… 😌\n\nIt just felt easy being around you 💖"
     ];
 
-    error.innerHTML = messages[Math.floor(Math.random() * messages.length)];
+    /* ===============================
+       START BUTTON
+    ================================= */
 
-    noBtn.style.transform =
-        "translateX(" + (Math.random()*60 - 30) + "px)";
-}
+    startBtn.addEventListener("click", () => {
+        hero.style.display = "none";
+        story.classList.remove("hidden");
 
-/* HEART CONFETTI */
-function launchConfetti() {
+        if (music) {
+            music.volume = 0.3;
+            music.play().catch(()=>{});
+        }
 
-    const container = document.createElement("div");
-    container.style.position = "fixed";
-    container.style.inset = "0";
-    container.style.pointerEvents = "none";
-    document.body.appendChild(container);
+        showPage(0);
+        createParticles();
+    });
 
-    for (let i = 0; i < 60; i++) {
-        const heart = document.createElement("div");
-        heart.innerHTML = "💖";
-        heart.style.position = "absolute";
-        heart.style.left = "50%";
-        heart.style.top = "50%";
-        heart.style.fontSize = Math.random()*20 + 15 + "px";
-        heart.style.transition = "all 1.2s ease-out";
+    /* ===============================
+       PAGE DISPLAY WITH FADE
+    ================================= */
 
-        container.appendChild(heart);
+    function showPage(index) {
 
-        const angle = Math.random() * Math.PI * 2;
-        const distance = Math.random() * 250 + 80;
+        scene.style.opacity = "0";
 
         setTimeout(() => {
-            heart.style.left = 50 + Math.cos(angle) * distance + "%";
-            heart.style.top = 50 + Math.sin(angle) * distance + "%";
-            heart.style.opacity = "0";
-        }, 50);
+
+            title.innerHTML = "";
+            text.textContent = pages[index];
+
+            // Trigger fade animation
+            text.classList.remove("fade-in");
+            void text.offsetWidth;
+            text.classList.add("fade-in");
+
+            scene.style.opacity = "1";
+
+        }, 300);
     }
 
-    setTimeout(() => container.remove(), 1500);
-}
+    /* ===============================
+       TAP HANDLER
+    ================================= */
+
+    scene.addEventListener("click", () => {
+
+        if (inFinal) return;
+
+        if (current < pages.length - 1) {
+            current++;
+            showPage(current);
+        } else {
+            showFinal();
+        }
+
+    });
+
+    /* ===============================
+       FINAL QUESTION
+    ================================= */
+
+    function showFinal() {
+
+        inFinal = true;
+
+        scene.style.opacity = "0";
+
+        setTimeout(() => {
+
+            title.innerHTML = "So Vuyo 💌";
+
+            text.innerHTML = `
+Would you be my Valentine this year? 💘
+
+<button id="yesBtn">Yes ❤️</button>
+<button id="noBtn">No 🙈</button>
+
+<div id="errorMsg" style="margin-top:10px;"></div>
+    `;
+
+            // Fade animation
+            text.classList.remove("fade-in");
+            void text.offsetWidth;
+            text.classList.add("fade-in");
+
+            scene.style.opacity = "1";
+
+            document.getElementById("yesBtn").addEventListener("click", yes);
+            document.getElementById("noBtn").addEventListener("click", noClicked);
+
+        }, 300);
+    }
+
+    /* ===============================
+       YES
+    ================================= */
+
+    function yes() {
+
+        launchConfetti();
+
+        const storySection = document.getElementById("story");
+
+        // Darken background
+        storySection.classList.add("darkened");
+
+        scene.classList.add("final-mode");
+
+        scene.style.opacity = "0";
+
+        setTimeout(() => {
+
+            title.innerHTML = "Valentine’s Day 2026 💘";
+
+            text.innerHTML = `
+✔ Looks like that rematch is officially a date.🥹
+
+🎱 Best of 3?
+
+Winner buys milkshakes.
+    `;
+
+            text.classList.remove("fade-in");
+            void text.offsetWidth;
+            text.classList.add("fade-in");
+
+            scene.style.opacity = "1";
+
+        }, 600);
+    }
+
+
+    /* ===============================
+       NO
+    ================================= */
+
+    function noClicked() {
+
+        const error = document.getElementById("errorMsg");
+        const noBtn = document.getElementById("noBtn");
+
+        error.textContent = "Are you suuuure? 😌";
+
+        noBtn.classList.add("no-shrink");
+
+        const dx = Math.random()*60 - 30;
+        const dy = Math.random()*30 - 15;
+        noBtn.style.transform += ` translate(${dx}px, ${dy}px)`;
+    }
+
+
+    /* ===============================
+       FLOATING PARTICLES
+    ================================= */
+
+    function createParticles() {
+
+        setInterval(() => {
+
+            const p = document.createElement("div");
+            p.classList.add("particle");
+            p.textContent = "✨";
+            p.style.left = Math.random()*100 + "vw";
+            p.style.fontSize = Math.random()*10 + 10 + "px";
+
+            particlesContainer.appendChild(p);
+
+            setTimeout(()=>p.remove(),10000);
+
+        }, 600);
+    }
+
+    /* ===============================
+       CONFETTI
+    ================================= */
+
+    function launchConfetti() {
+
+        for (let i=0;i<50;i++) {
+
+            const heart = document.createElement("div");
+            heart.textContent="💖";
+            heart.style.position="fixed";
+            heart.style.left="50%";
+            heart.style.top="50%";
+            heart.style.fontSize=(Math.random()*15+15)+"px";
+            heart.style.transition="all 1.5s ease";
+
+            document.body.appendChild(heart);
+
+            const angle=Math.random()*Math.PI*2;
+            const dist=Math.random()*250+100;
+
+            requestAnimationFrame(()=>{
+                heart.style.transform=`translate(${Math.cos(angle)*dist}px,${Math.sin(angle)*dist}px)`;
+                heart.style.opacity="0";
+            });
+
+            setTimeout(()=>heart.remove(),1500);
+        }
+    }
+
+});
